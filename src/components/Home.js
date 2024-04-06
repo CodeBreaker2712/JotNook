@@ -9,14 +9,32 @@ class Home extends React.Component {
     uploadingImage: false,
     noteText: "", // Add this to track note text
     noteImage: null, // Add this to track the selected image file
+    selectedNote: null,
+  };
+
+  fetchNotes = async () => {
+    try {
+      const response = await fetch('https://av6sanzysf.execute-api.us-east-1.amazonaws.com/stage-api-triggers-lambda/fetch', {
+        method: 'GET', // Or 'POST', depending on how your endpoint is configured
+        headers: {
+            'Content-Type': 'application/json', // Specifies the format of the request's body
+            'Accept': 'application/json', // Specifies that the client expects JSON
+          },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Assume that the response is an array of note metadata
+        this.setState({ notes: data });
+      } else {
+        throw new Error('Failed to fetch notes');
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    }
   };
 
   componentDidMount() {
     this.fetchNotes();
-  }
-
-  fetchNotes = () => {
-    // Fetch notes from the backend or local storage
   }
 
   handleNewNote = () => {
@@ -53,7 +71,7 @@ class Home extends React.Component {
         const response = await fetch('https://av6sanzysf.execute-api.us-east-1.amazonaws.com/stage-api-triggers-lambda/upload', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(noteData),
         });
@@ -169,6 +187,36 @@ class Home extends React.Component {
     </div>
   );
 
+  getS3ObjectUrl = (key) => {
+    // This is a simplification. In a real app, you would want to generate a signed URL using AWS SDK
+    // that gives temporary access to the private object. You should NOT make your bucket or objects public.
+    return `https://jotnook-bucket.s3.amazonaws.com/${key}`;
+  }
+
+  handleNoteClick = (note) => {
+    this.setState({ selectedNote: note });
+  };
+
+  renderNoteDetailCard = () => {
+    const { selectedNote } = this.state;
+    if (!selectedNote) return null;
+
+    // Generate the presigned URL for the image (this should be done in your backend)
+    const imageUrl = this.getS3ObjectUrl(selectedNote.imageKeys[0]);
+
+    return (
+      <div className="note-detail-card">
+        <h3>Note Details</h3>
+        <img src={imageUrl} alt="Note" />
+        <p>Note text or other details here...</p>
+        {/* Close button or other UI to deselect the note */}
+        <button onClick={() => this.setState({ selectedNote: null })}>
+          Close
+        </button>
+      </div>
+    );
+  };
+
   render() {
     return (
       <div className="home-container">
@@ -178,13 +226,18 @@ class Home extends React.Component {
         <main className="notes-grid">
           {this.state.creatingNote && this.renderNoteCreationCard()}
           {this.state.notes.map(note => (
-            <div key={note.id} className="note-card">
-              <h3>{note.title}</h3>
-              <p>{note.summary}</p>
+            <div key={note.noteId} className="note-card" onClick={() => this.handleNoteClick(note)}>
+              <h3>Note {note.noteId}</h3> {/* Since we don't have title, we use noteId */}
+              {/* If we have multiple images or texts, we need to handle them appropriately */}
+              <img src={this.getS3ObjectUrl(note.imageKeys[0])} alt="Note" />
+              {/* We cannot display the text content directly since we only have keys, not the content.
+                * You may need to fetch the actual content from S3 if you want to display it.
+                */}
               {/* More note details here */}
             </div>
           ))}
         </main>
+        {this.renderNoteDetailCard()}
       </div>
     );
   }
