@@ -171,14 +171,15 @@ class Home extends React.Component {
         value={this.state.noteText}
         onChange={this.handleNoteTextChange}
       ></textarea>
-      <label htmlFor="file-input">
-        <IoImages className="images-icon" />
+      {/* Update this label to use the new styles */}
+      <label htmlFor="file-input" id="file-input-label">
+        <IoImages className="paperclip-icon" />
+        Attach Image
       </label>
       <input
         id="file-input"
         type="file"
         accept="image/*"
-        style={{ display: 'none' }}
         onChange={this.handleFileInputChange}
       />
       {/* Show loading indicator if uploading */}
@@ -228,19 +229,19 @@ class Home extends React.Component {
           {this.state.notes.map(note => (
             <div key={note.noteId} className="note-card" onClick={() => this.handleNoteClick(note)}>
               <h3>Note {note.noteId}</h3> {/* Since we don't have title, we use noteId */}
-              {/* If we have multiple images or texts, we need to handle them appropriately */}
-              <img src={this.getS3ObjectUrl(note.imageKeys[0])} alt="Note" />
-              {/* We cannot display the text content directly since we only have keys, not the content.
-                * You may need to fetch the actual content from S3 if you want to display it.
-                */}
-              {/* More note details here */}
+              <p>{note.text}</p> {/* Display the text of the note here */}
+              <img src={this.getS3ObjectUrl(note.imageKeys[0])} alt="Note" style={{ width: '100%', borderRadius: '8px' }} />
+              {/* More note details or actions could go here */}
             </div>
           ))}
         </main>
+        <div style={{ backgroundColor: '#189AB4', marginTop: '20px' }}> {/* This sets the background color for the section below the notes grid */}
+          {/* Additional content or footer here */}
+        </div>
         {this.renderNoteDetailCard()}
       </div>
     );
-  }
+  }  
 }
 
 export default Home;

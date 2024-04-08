@@ -1,7 +1,12 @@
+head {
+    color: "#189AB4";
+}
+
 .home-container {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    background-color: #D4F1F4; /* Set the background color */
   }
   
   .header {
@@ -19,63 +24,100 @@
   }
   
   .note-card {
-    background-color: #f9f9f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    background-color: #ffffff; /* Lighter background for cards */
+    border: none; /* Remove border */
+    border-radius: 16px; /* More rounded corners for a modern look */
     padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Softer shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transition for hover effects */
+  }
+  
+  .note-card:hover {
+    transform: translateY(-5px); /* Slight raise effect on hover */
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
   }
   
   .note-card h3 {
     margin: 0;
     color: #333;
+    font-size: 1.25rem; /* Larger font size for the title */
   }
   
   .note-card p {
     color: #666;
+    font-size: 1rem; /* Adjust font size if needed */
   }
-  
-  
-  /* Additional styles for buttons, headers, etc. */
   
   .note-creation-card {
     background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px; /* Adds space between the note creation card and the grid */
+    border: none;
+    border-radius: 16px; /* Consistent rounded corners */
+    padding: 20px; /* More padding for spacing */
+    margin-bottom: 20px; /* More space between the note creation card and the grid */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
   
   .note-creation-card textarea {
-    width: 100%;
-    height: 100px;
-    margin-bottom: 10px;
-    padding: 10px;
+    width: calc(100% - 40px); /* Subtract padding */
+    height: 150px; /* Larger area for text */
+    margin-bottom: 15px;
+    padding: 20px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 12px;
+    font-size: 1rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
   .paperclip-icon {
-    font-size: 24px; /* Size of the paperclip icon */
-    cursor: pointer; /* Changes the cursor when hovering over the icon */
-    /* Add more styling as needed */
-  }
-  
-  /* Style for your save button */
-  .note-creation-card button {
-    background-color: #4CAF50; /* Green background */
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
+    font-size: 24px;
     cursor: pointer;
-    float: right; /* Aligns the button to the right */
+    margin-right: 10px; /* Space between icon and text */
   }
   
-  /* Clear floats after the buttons in the note creation card */
+  .note-creation-card button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px 30px; /* Larger button for better clickability */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold; /* Make text bold */
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+  }
+  
+  .note-creation-card button:hover {
+    background-color: #45a049; /* Darken button color on hover */
+  }
+  
   .note-creation-card::after {
     content: "";
     display: table;
     clear: both;
   }
+  
+  /* Styling for input[type=file] label */
+  #file-input-label {
+    background-color: #e7e7e7; /* Light grey background */
+    color: #333;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-block; /* Allows for margin and width/height if needed */
+    transition: background-color 0.3s ease; /* Transition for hover effect */
+  }
+  
+  #file-input-label:hover {
+    background-color: #dcdcdc; /* Darken label background on hover */
+  }
+  
+  /* Hide the actual file input but make the label clickable */
+  #file-input {
+    display: none;
+  }
+
+  .note-creation-card label, .note-creation-card textarea::placeholder {
+    color: #aaa; /* Placeholder and label color */
+    font-style: italic; /* Italicize placeholders and labels */
+  }  
   
