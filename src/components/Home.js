@@ -23,6 +23,7 @@ class Home extends React.Component {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched notes with signed URLs:', data); // Add this line to log the data
         // Assume that the response is an array of note metadata
         this.setState({ notes: data });
       } else {
@@ -201,17 +202,19 @@ class Home extends React.Component {
   renderNoteDetailCard = () => {
     const { selectedNote } = this.state;
     if (!selectedNote) return null;
-
-    // Generate the presigned URL for the image (this should be done in your backend)
-    const imageUrl = this.getS3ObjectUrl(selectedNote.imageKeys[0]);
-
+  
+    // Use the presigned URL for the image
+    const imageUrl = selectedNote.imageUrl; // Ensure this is the signed URL
+  
     return (
       <div className="note-detail-card">
-        <h3>Note Details</h3>
-        <img src={imageUrl} alt="Note" />
-        <p>Note text or other details here...</p>
-        {/* Close button or other UI to deselect the note */}
-        <button onClick={() => this.setState({ selectedNote: null })}>
+        <div className="note-image-container">
+          <img src={imageUrl} alt="Note" className="note-image" />
+        </div>
+        <div className="note-text-container">
+          <p className="note-text">{selectedNote.text}</p>
+        </div>
+        <button className="close-button" onClick={() => this.setState({ selectedNote: null })}>
           Close
         </button>
       </div>
@@ -225,20 +228,22 @@ class Home extends React.Component {
           <button onClick={this.handleNewNote}>Create Note</button>
         </header>
         <main className="notes-grid">
-          {this.state.creatingNote && this.renderNoteCreationCard()}
-          {this.state.notes.map(note => (
+        {this.state.creatingNote && this.renderNoteCreationCard()}
+        {this.state.notes.map(note => (
             <div key={note.noteId} className="note-card" onClick={() => this.handleNoteClick(note)}>
-              <h3>Note {note.noteId}</h3> {/* Since we don't have title, we use noteId */}
-              <p>{note.text}</p> {/* Display the text of the note here */}
-              <img src={this.getS3ObjectUrl(note.imageKeys[0])} alt="Note" style={{ width: '100%', borderRadius: '8px' }} />
-              {/* More note details or actions could go here */}
+                <h3>Note {note.noteId}</h3>
+                <p>{note.text}</p>
+                {/* Use the signed URL for the image src */}
+                {note.imageUrl && <img src={note.imageUrl} alt="Note" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px' }} />}
+                {/* More note details or actions could go here */}
             </div>
-          ))}
+        ))}
         </main>
         <div style={{ backgroundColor: '#189AB4', marginTop: '20px' }}> {/* This sets the background color for the section below the notes grid */}
           {/* Additional content or footer here */}
         </div>
         {this.renderNoteDetailCard()}
+        {this.state.selectedNote && <div className="backdrop" onClick={() => this.setState({ selectedNote: null })}></div>}
       </div>
     );
   }  
