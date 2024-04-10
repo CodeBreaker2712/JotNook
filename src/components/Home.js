@@ -7,24 +7,23 @@ class Home extends React.Component {
     notes: [],
     creatingNote: false,
     uploadingImage: false,
-    noteText: "", // Add this to track note text
-    noteImage: null, // Add this to track the selected image file
+    noteText: "", 
+    noteImage: null, 
     selectedNote: null,
   };
 
   fetchNotes = async () => {
     try {
       const response = await fetch('https://av6sanzysf.execute-api.us-east-1.amazonaws.com/stage-api-triggers-lambda/fetch', {
-        method: 'GET', // Or 'POST', depending on how your endpoint is configured
+        method: 'GET', 
         headers: {
-            'Content-Type': 'application/json', // Specifies the format of the request's body
-            'Accept': 'application/json', // Specifies that the client expects JSON
+            'Content-Type': 'application/json', 
+            'Accept': 'application/json', 
           },
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched notes with signed URLs:', data); // Add this line to log the data
-        // Assume that the response is an array of note metadata
+        console.log('Fetched notes with signed URLs:', data); 
         this.setState({ notes: data });
       } else {
         throw new Error('Failed to fetch notes');
@@ -39,7 +38,7 @@ class Home extends React.Component {
   }
 
   handleNewNote = () => {
-    this.setState({ creatingNote: true }); // Update state to show the note creation card
+    this.setState({ creatingNote: true }); 
   }
 
   handleNoteTextChange = (event) => {
@@ -49,7 +48,7 @@ class Home extends React.Component {
   handleFileInputChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      this.setState({ noteImage: file }); // Store the file in state
+      this.setState({ noteImage: file }); 
     }
   }
 
@@ -60,7 +59,6 @@ class Home extends React.Component {
       const timestamp = Date.now();
       const folderName = `uploads/note-${timestamp}`;
       try {
-        // Convert image to base64
         const base64Image = await this.getBase64(noteImage);
         const noteData = {
           text: noteText,
@@ -68,7 +66,6 @@ class Home extends React.Component {
           folderName: folderName,
         };
 
-        // Send both text and image in one request
         const response = await fetch('https://av6sanzysf.execute-api.us-east-1.amazonaws.com/stage-api-triggers-lambda/upload', {
           method: 'POST',
           headers: {
@@ -79,7 +76,6 @@ class Home extends React.Component {
 
         if (response.ok) {
           console.log('Note successfully saved');
-          // Clear the form and refresh the notes list
           this.setState({
             creatingNote: false,
             noteText: "",
@@ -172,7 +168,6 @@ class Home extends React.Component {
         value={this.state.noteText}
         onChange={this.handleNoteTextChange}
       ></textarea>
-      {/* Update this label to use the new styles */}
       <label htmlFor="file-input" id="file-input-label">
         <IoImages className="paperclip-icon" />
         Attach Image
@@ -183,15 +178,12 @@ class Home extends React.Component {
         accept="image/*"
         onChange={this.handleFileInputChange}
       />
-      {/* Show loading indicator if uploading */}
       {this.state.uploadingImage && <p>Uploading Image...</p>}
       <button onClick={this.handleSaveNote}>Save Note</button>
     </div>
   );
 
   getS3ObjectUrl = (key) => {
-    // This is a simplification. In a real app, you would want to generate a signed URL using AWS SDK
-    // that gives temporary access to the private object. You should NOT make your bucket or objects public.
     return `https://jotnook-bucket.s3.amazonaws.com/${key}`;
   }
 
@@ -203,8 +195,7 @@ class Home extends React.Component {
     const { selectedNote } = this.state;
     if (!selectedNote) return null;
   
-    // Use the presigned URL for the image
-    const imageUrl = selectedNote.imageUrl; // Ensure this is the signed URL
+    const imageUrl = selectedNote.imageUrl; 
   
     return (
       <div className="note-detail-card">
@@ -233,14 +224,11 @@ class Home extends React.Component {
             <div key={note.noteId} className="note-card" onClick={() => this.handleNoteClick(note)}>
                 <h3>Note {note.noteId}</h3>
                 <p>{note.text}</p>
-                {/* Use the signed URL for the image src */}
                 {note.imageUrl && <img src={note.imageUrl} alt="Note" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px' }} />}
-                {/* More note details or actions could go here */}
             </div>
         ))}
         </main>
-        <div style={{ backgroundColor: '#189AB4', marginTop: '20px' }}> {/* This sets the background color for the section below the notes grid */}
-          {/* Additional content or footer here */}
+        <div style={{ backgroundColor: '#189AB4', marginTop: '20px' }}> 
         </div>
         {this.renderNoteDetailCard()}
         {this.state.selectedNote && <div className="backdrop" onClick={() => this.setState({ selectedNote: null })}></div>}
