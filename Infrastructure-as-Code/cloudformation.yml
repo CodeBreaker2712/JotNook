@@ -1,0 +1,293 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: >
+  AWS infrastructure for JotNook application including API Gateway, Lambda functions,
+  KMS, Secrets Manager, S3, and Elastic Beanstalk.
+
+Resources:
+
+  # API Gateway Rest API
+  JotNookAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "JotNookAPI"
+      Description: "API for JotNook application"
+
+  # API Gateway Resources
+  UploadResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ParentId: !GetAtt JotNookAPI.RootResourceId
+      PathPart: "upload"
+  
+  FetchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ParentId: !GetAtt JotNookAPI.RootResourceId
+      PathPart: "fetch"
+
+  # API Gateway Methods
+  UploadPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ResourceId: !Ref UploadResource
+      HttpMethod: "POST"
+      AuthorizationType: "NONE"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${JotNookStoreLambda.Arn}/invocations"
+
+  FetchGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ResourceId: !Ref FetchResource
+      HttpMethod: "GET"
+      AuthorizationType: "NONE"
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: "GET"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${JotNookFetchLambda.Arn}/invocations"
+
+  UploadOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ResourceId: !Ref UploadResource
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: "Empty"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+      Integration:
+        Type: "MOCK"
+        RequestTemplates:
+          application/json: "{ \"statusCode\": 200 }"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  FetchOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref JotNookAPI
+      ResourceId: !Ref FetchResource
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: "Empty"
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+      Integration:
+        Type: "MOCK"
+        RequestTemplates:
+          application/json: "{ \"statusCode\": 200 }"
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+
+
+  #Lambda Functions
+  JotNookStoreLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "jotnook-store"
+      Runtime: "nodejs20.x" 
+      Handler: "index.handler" 
+      Role: "arn:aws:iam::211125513357:role/LabRole"
+      Code:
+        S3Bucket: "jotnook-lambda-bucket" 
+        S3Key: "jotnook-store.zip" 
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          SECRET_NAME: "jotnook-confidence" 
+          BUCKET_NAME: "jotnook-storeroom" 
+      TracingConfig:
+        Mode: "Active"
+
+  JotNookFetchLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: "jotnook-fetch"
+      Runtime: "nodejs20.x" 
+      Handler: "index.handler" 
+      Role: "arn:aws:iam::211125513357:role/LabRole"
+      Code:
+        S3Bucket: "jotnook-lambda-bucket" 
+        S3Key: "jotnook-fetch.zip" 
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          SECRET_NAME: "jotnook-confidence" 
+          BUCKET_NAME: "jotnook-storeroom" 
+
+      
+
+  # KMS Key
+  JotNookEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "KMS Key for encrypting JotNook secrets"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          - Sid: "Enable IAM User Permissions"
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: "Allow use of the key"
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+
+  # KMS Key Alias
+  JotNookEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: "alias/jotnook-encryption-key"
+      TargetKeyId: !Ref JotNookEncryptionKey
+
+
+
+  # Secrets Manager Secret
+  JotNookSecrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: "jotnook-confidence"
+      Description: "Secrets for the JotNook application"
+      SecretString: !Sub |
+        {
+          "jotnook-secret-key": "${JotNookEncryptionKey.Arn}",
+          "jotnook-secret-bucket": "jotnook-storeroom"
+        }
+      KmsKeyId: !Ref JotNookEncryptionKey
+
+
+
+  # S3 Bucket
+  JotNookStoreroomBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "jotnook-storeroom"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["GET", "PUT", "POST", "DELETE", "HEAD"]
+            AllowedOrigins: ["*"]
+            MaxAge: 3000
+
+
+  # Elastic Beanstalk Application
+  JotNookApplication:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      Description: "JotNook React Frontend Application"
+
+  # Elastic Beanstalk Application Version
+  JotNookApplicationVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref JotNookApplication
+      Description: "Initial Version"
+      SourceBundle:
+        S3Bucket: "jotnook-lambda-bucket"
+        S3Key: "jotnook.zip"
+
+  # Elastic Beanstalk Environment
+  JotNookEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref JotNookApplication
+      Description: "Environment for the JotNook application"
+      VersionLabel: !Ref JotNookApplicationVersion
+      SolutionStackName: "64bit Amazon Linux 2023 v6.1.2 running Node.js 20"
+      OptionSettings:
+        # Environment type configuration
+        - Namespace: "aws:elasticbeanstalk:environment"
+          OptionName: "EnvironmentType"
+          Value: "SingleInstance"
+
+        # Instance type configuration
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: "InstanceType"
+          Value: "t2.micro"
+        
+        # Service Role
+        - Namespace: "aws:elasticbeanstalk:environment"
+          OptionName: "ServiceRole"
+          Value: "LabRole"
+
+        # Instance Profile
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: "IamInstanceProfile"
+          Value: "LabInstanceProfile"
+
+        # Example VPC configuration (if needed)
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "VPCId"
+          Value: "vpc-07431fff41df0a438"
+
+        # More VPC configurations: Subnets (if needed)
+        - Namespace: "aws:ec2:vpc"
+          OptionName: "Subnets"
+          Value: "subnet-0a2b3068279553353,subnet-02efb643d43c6abc4"
+        
+        # Auto-scaling group's min and max size
+        - Namespace: "aws:autoscaling:asg"
+          OptionName: "MinSize"
+          Value: "1"
+        - Namespace: "aws:autoscaling:asg"
+          OptionName: "MaxSize"
+          Value: "1"
+
+Outputs:
+  JotNookStoreroomBucketName:
+    Description: "Name of the S3 bucket"
+    Value: !Ref JotNookStoreroomBucket
+
+  JotNookStoreroomBucketArn:
+    Description: "ARN of the S3 bucket"
+    Value: !GetAtt JotNookStoreroomBucket.Arn
+
+
+
+  JotNookApplicationURL:
+    Description: "URL of the Elastic Beanstalk Environment"
+    Value: !GetAtt JotNookEnvironment.EndpointURL
